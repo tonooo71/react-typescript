@@ -9,15 +9,6 @@ const App: React.FC = () => {
       <div className={container}>
         <h1>This is React TypeScript Template</h1>
         <img src="static/react-typescript.png" width={400} className={img} />
-        <span>This template depends on the following:</span>
-        <ul>
-          <li>React v18</li>
-          <li>TypeScript</li>
-          <li>linaria</li>
-          <li>ESLint</li>
-          <li>Prettier</li>
-          <li>Yarn v3</li>
-        </ul>
       </div>
     </div>
   );

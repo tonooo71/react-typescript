@@ -1,0 +1,9 @@
+# yarn 3
+.yarn/*
+!.yarn/releases/
+!.yarn/plugins/
+
+# nodejs
+node_modules/
+
+dist/

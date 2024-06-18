@@ -1,0 +1,13 @@
+.dateContainerCss {
+  &[data-holiday="true"] {
+    background-color: #ccc;
+  }
+  &[data-today="true"] {
+    background-color: #8abbff;
+  }
+}
+
+.timeContainerCss {
+  display: flex;
+  gap: 0.5em;
+}

@@ -1,13 +1,13 @@
 {
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "liveServer.settings.NoBrowser": true,
   "liveServer.settings.port": 3000,
   "liveServer.settings.host": "192.168.0.1",
   "liveServer.settings.root": "dist/",
-  "eslint.packageManager": "yarn",
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "eslint.experimental.useFlatConfig": true,
+  "prettier.configPath": "prettier.config.js"
 }

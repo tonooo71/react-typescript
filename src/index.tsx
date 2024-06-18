@@ -1,14 +1,58 @@
-import "./reset.css";
-import { css } from "@linaria/core";
-import React from "react";
+import React, { useState } from "react";
+
+import { Button, Intent } from "@blueprintjs/core";
+import { Cog, ManuallyEnteredData, Reset } from "@blueprintjs/icons";
 import { createRoot } from "react-dom/client";
 
+import SettingModal from "./SettingModal";
+import WorkTable from "./WorkTable";
+import { resetdb } from "./db";
+import { reflectMulti } from "./reflect";
+
+import "../node_modules/@blueprintjs/core/lib/css/blueprint.css";
+import "../node_modules/@blueprintjs/datetime/lib/css/blueprint-datetime.css";
+import "../node_modules/normalize.css";
+import styles from "./index.module.scss";
+
 const App: React.FC = () => {
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
+
+  const handleClickReflectMulti = () => {
+    const idxs = Array.from(document.querySelectorAll(".valid_day")).map(
+      // @ts-expect-error
+      (elm) => parseInt(elm.dataset.index),
+    );
+    reflectMulti(idxs);
+  };
+
   return (
-    <div className={app}>
-      <div className={container}>
-        <h1>This is React TypeScript Template</h1>
-        <img src="static/react-typescript.png" width={400} className={img} />
+    <div className={styles.container}>
+      <div className={styles.center}>
+        <SettingModal
+          isOpen={isSettingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
+        <div className={styles.buttons}>
+          <Button
+            onClick={handleClickReflectMulti}
+            intent={Intent.PRIMARY}
+            icon={<ManuallyEnteredData />}
+          >
+            全ての有効なデータをExtimeに反映する
+          </Button>
+          <Button onClick={resetdb} icon={<Reset />}>
+            全てクリアする
+          </Button>
+          <Button
+            icon={<Cog />}
+            text="設定"
+            onClick={() => setSettingsOpen(true)}
+          />
+        </div>
+        <br />
+        <div className={styles.worktable}>
+          <WorkTable />
+        </div>
       </div>
     </div>
   );
@@ -16,17 +60,3 @@ const App: React.FC = () => {
 
 const root = createRoot(document.getElementById("contents")!);
 root.render(<App />);
-
-const app = css`
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-`;
-
-const container = css`
-  margin: auto;
-`;
-
-const img = css`
-  margin: 0 auto;
-`;

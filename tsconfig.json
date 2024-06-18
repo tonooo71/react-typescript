@@ -1,24 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ES2020",
-    "moduleResolution": "node",
-    "jsx": "react",
-    "strict": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": false,
-    "allowJs": true /* JS ファイルもコンパイル対象に */,
-    "checkJs": false /* JS ファイルの型チェックは行わない */,
-    "outDir": "",
-    "lib": ["DOM"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "importHelpers": true,
-    "removeComments": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true, // 未使用変数を許可しない
+    "noUnusedParameters": true, // 未使用引数を許可しない(必要な場合はprefixとして_を付与すること)
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "plugins": [{ "name": "typescript-plugin-css-modules" }]
   },
   "include": ["src/**/*"]
 }

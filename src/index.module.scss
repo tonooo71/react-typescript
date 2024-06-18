@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+}
+
+.center {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1em 0;
+}
+
+.buttons {
+  display: flex;
+  & button:first-child {
+    margin-right: auto;
+  }
+}
+
+.worktable {
+  overflow: auto;
+  height: 0;
+  flex-grow: 1;
+}
+
+.timeinput {
+  display: flex;
+  gap: 1em;
+}

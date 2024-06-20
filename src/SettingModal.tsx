@@ -5,29 +5,71 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  H3,
+  H5,
   HTMLTable,
+  InputGroup,
+  Intent,
+  Radio,
+  RadioGroup,
 } from "@blueprintjs/core";
-import { TimePicker } from "@blueprintjs/datetime";
-import { Minus, Plus } from "@blueprintjs/icons";
 import { useLiveQuery } from "dexie-react-hooks";
 
-import { db } from "./db";
+import { APPROVAL_PROCESS, ApprovalProcessType, db } from "./db";
+import { getDiffTime } from "./utils";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
 };
 
+const DEFAULT_APPROVAL_PROCESS_SETTING_KEY = "defaultApprovalProcess";
+
 const SettingModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const allRestData = useLiveQuery(() => db.rest.toArray());
+  const allSetting = useLiveQuery(() => db.setting.toArray());
 
-  if (allRestData === undefined) return null;
+  if (allRestData === undefined || allSetting === undefined) return null;
+
+  const closeDisabled = allRestData.some(
+    (rd) => rd.starttime === "" || rd.endtime === "",
+  );
+
+  // approval process setting
+  const defaultApprovalProcess =
+    allSetting.find(({ key }) => key === DEFAULT_APPROVAL_PROCESS_SETTING_KEY)
+      ?.value ?? APPROVAL_PROCESS.KARI;
+  const handleChangeDefaultApprovalProcess = async (
+    e: React.FormEvent<HTMLInputElement>,
+  ) => {
+    const approvalProcess = e.currentTarget.value as ApprovalProcessType;
+    if (
+      (await db.setting.get(DEFAULT_APPROVAL_PROCESS_SETTING_KEY)) !== undefined
+    ) {
+      db.setting.update(DEFAULT_APPROVAL_PROCESS_SETTING_KEY, {
+        value: approvalProcess,
+      });
+    } else {
+      db.setting.add({
+        key: DEFAULT_APPROVAL_PROCESS_SETTING_KEY,
+        value: approvalProcess,
+      });
+    }
+    db.daywork.bulkUpdate(
+      Array(31)
+        .fill(0)
+        .map((_, idx) => ({
+          key: idx + 1,
+          changes: {
+            approvalProcess,
+          },
+        })),
+    );
+  };
 
   return (
-    <Dialog title="設定" isOpen={isOpen} onClose={onClose}>
+    <Dialog title="設定" isOpen={isOpen} isCloseButtonShown={false}>
       <DialogBody>
-        <H3>休憩時間</H3>
+        <H5>休憩時間</H5>
         <HTMLTable bordered compact>
           <thead>
             <tr>
@@ -37,12 +79,8 @@ const SettingModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <th>休憩時間</th>
               <th>
                 <Button
-                  icon={<Plus />}
                   onClick={() =>
-                    db.rest.add({
-                      starttime: new Date(1970, 0, 2, 12, 0).getTime(),
-                      endtime: new Date(1970, 0, 2, 13, 0).getTime(),
-                    })
+                    db.rest.add({ starttime: "12:00", endtime: "13:00" })
                   }
                   text="追加"
                 />
@@ -51,42 +89,51 @@ const SettingModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </thead>
           <tbody>
             {allRestData.map((restData, idx) => {
+              const resttime = getDiffTime(
+                restData.starttime,
+                restData.endtime,
+              );
               return (
                 <tr key={idx}>
                   <th>{`休憩 ${idx + 1}`}</th>
                   <td>
-                    <TimePicker
-                      selectAllOnFocus
-                      value={new Date(restData.starttime)}
-                      onChange={(d) =>
-                        db.rest.update(restData.id, { starttime: d.getTime() })
+                    <InputGroup
+                      type="time"
+                      onChange={(e) =>
+                        db.rest.update(restData.id, {
+                          starttime: e.currentTarget.value,
+                        })
+                      }
+                      value={restData.starttime}
+                      intent={
+                        restData.starttime === "" ? Intent.DANGER : undefined
                       }
                     />
                   </td>
                   <td>
-                    <TimePicker
-                      selectAllOnFocus
-                      value={new Date(restData.endtime)}
-                      onChange={(d) =>
-                        db.rest.update(restData.id, { endtime: d.getTime() })
+                    <InputGroup
+                      type="time"
+                      onChange={(e) =>
+                        db.rest.update(restData.id, {
+                          endtime: e.currentTarget.value,
+                        })
+                      }
+                      value={restData.endtime}
+                      intent={
+                        restData.endtime === "" ? Intent.DANGER : undefined
                       }
                     />
                   </td>
                   <td>
-                    <TimePicker
-                      disabled
-                      value={
-                        new Date(
-                          restData.endtime -
-                            restData.starttime -
-                            9 * 60 * 60 * 1000,
-                        )
-                      }
+                    <InputGroup
+                      type="time"
+                      value={resttime}
+                      readOnly
+                      intent={resttime === "" ? Intent.DANGER : undefined}
                     />
                   </td>
                   <td>
                     <Button
-                      icon={<Minus />}
                       onClick={() => db.rest.delete(restData.id)}
                       text="削除"
                     />
@@ -96,8 +143,22 @@ const SettingModal: React.FC<Props> = ({ isOpen, onClose }) => {
             })}
           </tbody>
         </HTMLTable>
+        <br />
+        <H5>デフォルトの承認依頼処理</H5>
+        <RadioGroup
+          selectedValue={defaultApprovalProcess}
+          onChange={handleChangeDefaultApprovalProcess}
+          inline
+        >
+          <Radio label="仮入力" value={APPROVAL_PROCESS.KARI} />
+          <Radio label="承認依頼" value={APPROVAL_PROCESS.SHOUNINN} />
+        </RadioGroup>
       </DialogBody>
-      <DialogFooter actions={<Button text="Close" onClick={onClose} />} />
+      <DialogFooter
+        actions={
+          <Button text="Close" onClick={onClose} disabled={closeDisabled} />
+        }
+      />
     </Dialog>
   );
 };

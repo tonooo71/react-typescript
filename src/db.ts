@@ -25,10 +25,10 @@ type ApprovalProcessType =
 
 type WorkData = {
   day: number;
-  starttime: number;
-  endtime: number;
-  resttime: number;
-  healthtime: number;
+  starttime: StringTime;
+  endtime: StringTime;
+  resttime: StringTime;
+  healthtime: StringTime;
   healthtimePlus: boolean;
   dailyWorkEvent: DailyWorkEvent;
   approvalProcess: ApprovalProcessType;
@@ -36,19 +36,26 @@ type WorkData = {
 
 type RestData = {
   id: number;
-  starttime: number;
-  endtime: number;
+  starttime: StringTime;
+  endtime: StringTime;
+};
+
+type Setting = {
+  key: string;
+  value: string;
 };
 
 const db = new Dexie("worktime") as Dexie & {
   daywork: EntityTable<WorkData, "day">;
   rest: EntityTable<RestData, "id">;
+  setting: EntityTable<Setting, "key">;
 };
 
 db.version(1).stores({
   daywork:
     "day, starttime, endtime, resttime, worktime, healthtime, healthtimePlus, dailyWorkEvent, process",
   rest: "++id, starttime, endtime",
+  setting: "key, value",
 });
 
 /* Initialized */
@@ -58,10 +65,10 @@ const initdaywork = async () => {
     for (let day = 1; day < 32; day++) {
       const workData: WorkData = {
         day,
-        starttime: new Date(1970, 0, 2).getTime(),
-        endtime: new Date(1970, 0, 2).getTime(),
-        resttime: new Date(1970, 0, 2).getTime(),
-        healthtime: new Date(1970, 0, 2).getTime(),
+        starttime: "",
+        endtime: "",
+        resttime: "00:00",
+        healthtime: "00:00",
         healthtimePlus: true,
         dailyWorkEvent: DAILY_WORK_EVENT.WFH,
         approvalProcess: APPROVAL_PROCESS.KARI,
@@ -74,20 +81,20 @@ const initrest = async () => {
   const allRestData = await db.rest.toArray();
   if (allRestData.length === 0) {
     await db.rest.add({
-      starttime: new Date(1970, 0, 2, 12, 0).getTime(),
-      endtime: new Date(1970, 0, 2, 13, 0).getTime(),
+      starttime: "12:00",
+      endtime: "13:00",
     });
     await db.rest.add({
-      starttime: new Date(1970, 0, 2, 17, 30).getTime(),
-      endtime: new Date(1970, 0, 2, 17, 45).getTime(),
+      starttime: "17:30",
+      endtime: "17:45",
     });
     await db.rest.add({
-      starttime: new Date(1970, 0, 2, 19, 0).getTime(),
-      endtime: new Date(1970, 0, 2, 19, 30).getTime(),
+      starttime: "19:00",
+      endtime: "19:30",
     });
     await db.rest.add({
-      starttime: new Date(1970, 0, 2, 20, 15).getTime(),
-      endtime: new Date(1970, 0, 2, 20, 30).getTime(),
+      starttime: "20:00",
+      endtime: "20:15",
     });
   }
 };

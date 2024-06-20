@@ -22,20 +22,9 @@ const getOneDayMessageData = (workData: WorkData) => {
 
   const oneDayMessageData: MessageDataType = {
     day: day.toString(),
-    starttime: `${new Date(starttime).getHours()}:${new Date(starttime)
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`,
-    endtime: `${new Date(endtime).getHours()}:${new Date(endtime)
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`,
-    healthtime: `${healthtimePlus ? "" : "-"}${new Date(
-      healthtime,
-    ).getHours()}:${new Date(healthtime)
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`,
+    starttime,
+    endtime,
+    healthtime: `${healthtimePlus ? "" : "-"}${healthtime}`,
     dailyWorkEvent,
     approvalProcess,
   };
@@ -55,7 +44,7 @@ export const reflect = async (idx: number) => {
 
   if (
     workData.dailyWorkEvent !== DAILY_WORK_EVENT.NENKYU &&
-    (messageData.starttime === "0:00" || messageData.endtime === "0:00")
+    (messageData.starttime === "" || messageData.endtime === "")
   ) {
     console.error("May be invalid data.");
     return;
@@ -81,7 +70,7 @@ export const reflectMulti = async (idxs: number[]) => {
       ({ starttime, endtime, dailyWorkEvent }) =>
         !(
           dailyWorkEvent !== DAILY_WORK_EVENT.NENKYU &&
-          (starttime === "0:00" || endtime === "0:00")
+          (starttime === "" || endtime === "")
         ),
     );
 

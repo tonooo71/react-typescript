@@ -21,58 +21,127 @@ export const getDayOfWeek = (idx: number) => {
   }
 };
 
+export const getDiffTime = (
+  time1: StringTime, // starttime
+  time2: StringTime, // endtime
+): StringTime => {
+  if (time1.length > 0 && time2.length > 0) {
+    const [hour1, minute1] = time1.split(":").map((d) => parseInt(d));
+    const [hour2, minute2] = time2.split(":").map((d) => parseInt(d));
+    const hour = hour2 - hour1 - (minute2 >= minute1 ? 0 : 1);
+    const minute = minute2 - minute1 + (minute2 >= minute1 ? 0 : 60);
+    if (hour >= 0 && minute >= 0) {
+      return (
+        hour.toString().padStart(2, "0") +
+        ":" +
+        minute.toString().padStart(2, "0")
+      );
+    }
+  }
+  return "";
+};
+
+export const getAddTime = (
+  time1: StringTime,
+  time2: StringTime,
+): StringTime => {
+  if (time1.length > 0) {
+    if (time2.length > 0) {
+      const [hour1, minute1] = time1.split(":").map((d) => parseInt(d));
+      const [hour2, minute2] = time2.split(":").map((d) => parseInt(d));
+      const hour = hour2 + hour1 + (minute2 + minute1 >= 60 ? 1 : 0);
+      const minute = minute2 + minute1 - (minute2 + minute1 >= 60 ? 60 : 0);
+      return (
+        hour.toString().padStart(2, "0") +
+        ":" +
+        minute.toString().padStart(2, "0")
+      );
+    } else {
+      return time1;
+    }
+  } else {
+    if (time2.length > 0) {
+      return time2;
+    } else {
+      return "00:00";
+    }
+  }
+};
+
 export const getAllRestTime = (
-  start: number,
-  end: number,
+  start: StringTime,
+  end: StringTime,
   allRestData: RestData[],
-) => {
-  let allRestTime = 0;
-  allRestData.forEach(({ starttime, endtime }) => {
+): StringTime => {
+  const allRestTime = allRestData.reduce((prev, { starttime, endtime }) => {
     const restStart = starttime;
     const restEnd = endtime;
     const _tmpS = start > restEnd ? restEnd : start;
     const _restStart = _tmpS > restStart ? _tmpS : restStart;
     const _tmpE = restStart > end ? restStart : end;
     const _restEnd = _tmpE > restEnd ? restEnd : _tmpE;
-    allRestTime += _restEnd - _restStart;
-  });
-  return new Date(allRestTime - 9 * 60 * 60 * 1000);
+    const restTime = getDiffTime(_restStart, _restEnd);
+    return getAddTime(prev, restTime);
+  }, "00:00");
+  return allRestTime;
+};
+
+export const getNow = () => {
+  const hour = new Date().getHours();
+  const minute = new Date().getMinutes();
+  return (
+    hour.toString().padStart(2, "0") + ":" + minute.toString().padStart(2, "0")
+  );
 };
 
 export const updateDb = (
   day: number,
-  starttime: number,
-  endtime: number,
-  restTime: Date,
+  starttime: StringTime,
+  endtime: StringTime,
+  resttime: StringTime,
   dailyWorkEvent: DailyWorkEvent,
 ) => {
-  const allTime = new Date(endtime - starttime - 9 * 60 * 60 * 1000);
-  const regularTime =
-    dailyWorkEvent === DAILY_WORK_EVENT.WFH
-      ? 7.75
-      : dailyWorkEvent === DAILY_WORK_EVENT.NENKYU_WFH
-        ? 4.5
-        : 3.25;
-  const isHealthTimePlus =
-    allTime.getTime() - restTime.getTime() - regularTime * 60 * 60 * 1000 >= 0;
-  const healthTime = isHealthTimePlus
-    ? new Date(
-        allTime.getTime() -
-          restTime.getTime() -
-          (9 + regularTime) * 60 * 60 * 1000,
-      )
-    : new Date(
-        regularTime * 60 * 60 * 1000 -
-          allTime.getTime() +
-          restTime.getTime() -
-          9 * 60 * 60 * 1000,
-      );
-  db.daywork.update(day, {
-    starttime: starttime,
-    endtime: endtime,
-    resttime: restTime.getTime(),
-    healthtime: healthTime.getTime(),
-    healthtimePlus: isHealthTimePlus,
-    dailyWorkEvent: dailyWorkEvent,
-  });
+  const alltime = getDiffTime(starttime, endtime);
+  if (alltime.length > 0) {
+    if (resttime.length > 0) {
+      const regulartime =
+        dailyWorkEvent === DAILY_WORK_EVENT.WFH
+          ? "07:45"
+          : dailyWorkEvent === DAILY_WORK_EVENT.NENKYU_WFH
+            ? "04:30"
+            : "03:15";
+      const sumtime = getAddTime(regulartime, resttime);
+      const _healthtime = getDiffTime(sumtime, alltime);
+      const healthtimePlus = _healthtime.length > 0;
+      const healthtime = healthtimePlus
+        ? _healthtime
+        : getDiffTime(alltime, sumtime);
+      db.daywork.update(day, {
+        starttime,
+        endtime,
+        resttime,
+        healthtime,
+        healthtimePlus,
+        dailyWorkEvent,
+      });
+    } else {
+      db.daywork.update(day, {
+        starttime,
+        endtime,
+        resttime,
+        healthtime: "00:00",
+        healthtimePlus: true,
+        dailyWorkEvent,
+      });
+    }
+  } else {
+    db.daywork.update(day, {
+      starttime,
+      endtime,
+      resttime: "00:00",
+      healthtime: "00:00",
+      healthtimePlus: true,
+      dailyWorkEvent,
+    });
+  }
 };

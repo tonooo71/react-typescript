@@ -7,3 +7,5 @@ interface Window {
 }
 
 declare module "*.scss";
+
+type StringTime = string; // HH:MM or ""(empty)

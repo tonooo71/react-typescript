@@ -16,7 +16,7 @@ const WorkTable: React.FC = () => {
   useEffect(() => {
     const elm = document.getElementById(`day${now.getDate()}`);
     elm?.scrollIntoView(false);
-  }, []);
+  }, [allWorkData?.length]);
 
   const now = new Date();
   // 2023-01 -> 31

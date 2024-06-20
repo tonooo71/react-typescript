@@ -10,7 +10,6 @@ import { resetdb } from "./db";
 import { reflectMulti } from "./reflect";
 
 import "../node_modules/@blueprintjs/core/lib/css/blueprint.css";
-import "../node_modules/@blueprintjs/datetime/lib/css/blueprint-datetime.css";
 import "../node_modules/normalize.css";
 import styles from "./index.module.scss";
 

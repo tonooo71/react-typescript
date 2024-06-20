@@ -1,7 +1,12 @@
 import React from "react";
 
-import { Button, Checkbox, HTMLSelect, OptionProps } from "@blueprintjs/core";
-import { TimePicker } from "@blueprintjs/datetime";
+import {
+  Button,
+  HTMLSelect,
+  InputGroup,
+  OptionProps,
+  Switch,
+} from "@blueprintjs/core";
 import {
   Blank,
   ManuallyEnteredData,
@@ -21,7 +26,7 @@ import {
   db,
 } from "./db";
 import { reflect } from "./reflect";
-import { getAllRestTime, getDayOfWeek, updateDb } from "./utils";
+import { getAllRestTime, getDayOfWeek, getNow, updateDb } from "./utils";
 
 import styles from "./WorkTableLine.module.scss";
 
@@ -67,8 +72,7 @@ const WorkTableLine: React.FC<Props> = ({
   const actionDisabled =
     isHoliday ||
     (dailyWorkEvent !== DAILY_WORK_EVENT.NENKYU &&
-      (starttime === new Date(1970, 0, 2).getTime() ||
-        endtime === new Date(1970, 0, 2).getTime()));
+      (starttime === "" || endtime === ""));
 
   const isNenkyu = dailyWorkEvent === DAILY_WORK_EVENT.NENKYU;
 
@@ -79,6 +83,7 @@ const WorkTableLine: React.FC<Props> = ({
       data-holiday={isHoliday}
       data-today={day === now.getDate()}
     >
+      {/* 有効なデータ */}
       <td>
         {actionDisabled ? (
           <Blank />
@@ -86,7 +91,9 @@ const WorkTableLine: React.FC<Props> = ({
           <Tick className="valid_day" data-index={idx} />
         )}
       </td>
+      {/* 日 */}
       <td>{`${month + 1}/${day}(${dayOfWeekStr})`}</td>
+      {/* 勤務事象 */}
       <td>
         <HTMLSelect
           options={eventOptions}
@@ -104,88 +111,100 @@ const WorkTableLine: React.FC<Props> = ({
           disabled={isHoliday}
         />
       </td>
+      {/* 始業時刻 */}
       <td>
         <div className={styles.timeContainerCss}>
-          <TimePicker
-            selectAllOnFocus
-            value={new Date(starttime)}
-            onChange={(d) => {
-              const restTime = getAllRestTime(
-                d.getTime(),
+          <InputGroup
+            type="time"
+            onChange={(e) => {
+              const _starttime = e.currentTarget.value;
+              const _resttime = getAllRestTime(
+                _starttime,
                 endtime,
                 allRestData,
               );
-              updateDb(day, d.getTime(), endtime, restTime, dailyWorkEvent);
+              updateDb(day, _starttime, endtime, _resttime, dailyWorkEvent);
             }}
+            value={starttime}
             disabled={isHoliday || isNenkyu}
           />
           <Button
             icon={<Time />}
             onClick={() => {
-              const now = new Date(
-                1970,
-                0,
-                2,
-                new Date().getHours(),
-                new Date().getMinutes(),
-              ).getTime();
-              const restTime = getAllRestTime(now, endtime, allRestData);
-              updateDb(day, now, endtime, restTime, dailyWorkEvent);
-            }}
-            disabled={isHoliday || isNenkyu}
-          />
-        </div>
-      </td>
-      <td>
-        <div className={styles.timeContainerCss}>
-          <TimePicker
-            selectAllOnFocus
-            value={new Date(endtime)}
-            onChange={(d) => {
-              const restTime = getAllRestTime(
-                starttime,
-                d.getTime(),
+              const _starttime = getNow();
+              const _resttime = getAllRestTime(
+                _starttime,
+                endtime,
                 allRestData,
               );
-              updateDb(day, starttime, d.getTime(), restTime, dailyWorkEvent);
-            }}
-            disabled={isHoliday || isNenkyu}
-          />
-          <Button
-            icon={<Time />}
-            onClick={() => {
-              const now = new Date(
-                1970,
-                0,
-                2,
-                new Date().getHours(),
-                new Date().getMinutes(),
-              ).getTime();
-              const restTime = getAllRestTime(starttime, now, allRestData);
-              updateDb(day, starttime, now, restTime, dailyWorkEvent);
+              updateDb(day, _starttime, endtime, _resttime, dailyWorkEvent);
             }}
             disabled={isHoliday || isNenkyu}
           />
         </div>
       </td>
+      {/* 終業時刻 */}
       <td>
-        <TimePicker
-          value={new Date(resttime)}
-          onChange={(d) => updateDb(day, starttime, endtime, d, dailyWorkEvent)}
-          disabled={isHoliday || isNenkyu}
+        <div className={styles.timeContainerCss}>
+          <InputGroup
+            type="time"
+            onChange={(e) => {
+              const _endtime = e.currentTarget.value;
+              const _resttime = getAllRestTime(
+                starttime,
+                _endtime,
+                allRestData,
+              );
+              updateDb(day, starttime, _endtime, _resttime, dailyWorkEvent);
+            }}
+            value={endtime}
+            disabled={isHoliday || isNenkyu}
+          />
+          <Button
+            icon={<Time />}
+            onClick={() => {
+              const _endtime = getNow();
+              const _resttime = getAllRestTime(
+                starttime,
+                _endtime,
+                allRestData,
+              );
+              updateDb(day, starttime, _endtime, _resttime, dailyWorkEvent);
+            }}
+            disabled={isHoliday || isNenkyu}
+          />
+        </div>
+      </td>
+      {/* 休憩時間 */}
+      <td>
+        <InputGroup
+          type="time"
+          onChange={(e) => {
+            const _resttime = e.currentTarget.value;
+            updateDb(day, starttime, endtime, _resttime, dailyWorkEvent);
+          }}
+          value={resttime}
+          disabled={isHoliday || isNenkyu || starttime === "" || endtime === ""}
         />
       </td>
+      {/* 健康管理時間 */}
       <td style={{ display: "flex" }}>
         {healthtimePlus ? (
           <Plus size={10} style={{ margin: "auto 4px auto 0" }} />
         ) : (
           <Minus size={10} style={{ margin: "auto 4px auto 0" }} />
         )}
-        <TimePicker disabled value={new Date(healthtime)} />
+        <InputGroup
+          type="time"
+          value={healthtime}
+          disabled={isHoliday || isNenkyu || starttime === "" || endtime === ""}
+          readOnly
+        />
       </td>
+      {/* 承認依頼処理 */}
       <td>
-        <Checkbox
-          checked={approvalProcess === APPROVAL_PROCESS.KARI}
+        <Switch
+          checked={approvalProcess !== APPROVAL_PROCESS.KARI}
           onChange={() =>
             db.daywork.update(day, {
               approvalProcess:
@@ -195,10 +214,12 @@ const WorkTableLine: React.FC<Props> = ({
             })
           }
           disabled={isHoliday}
-        >
-          仮入力
-        </Checkbox>
+          innerLabelChecked="承認依頼"
+          innerLabel="仮入力"
+          large
+        />
       </td>
+      {/* アクションボタン */}
       <td>
         <Button
           icon={<ManuallyEnteredData />}
@@ -208,10 +229,7 @@ const WorkTableLine: React.FC<Props> = ({
         />
         <Button
           icon={<Reset />}
-          onClick={() => {
-            const init = new Date(1970, 0, 2);
-            updateDb(day, init.getTime(), init.getTime(), init, dailyWorkEvent);
-          }}
+          onClick={() => updateDb(day, "", "", "00:00", dailyWorkEvent)}
           title="reset only this day"
           disabled={actionDisabled}
         />
